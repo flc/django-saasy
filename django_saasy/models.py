@@ -84,10 +84,11 @@ class Subscription(models.Model):
         return date
 
     def update_from_data(self, data):
-        if ((self.reference and data['reference'] != self.reference) or
-            data['referrer'] != self.referrer):
-            # this should not happen at all
-            raise ValueError("Subscription reference or referrer mismatch")
+        if self.status == "active":
+            if ((self.reference and data['reference'] != self.reference) or
+                data['referrer'] != self.referrer):
+                # this should not happen at all
+                raise ValueError("Subscription reference or referrer mismatch")
 
         self.reference = data['reference']
         self.customer_url = data['customerUrl']
@@ -125,4 +126,3 @@ class Subscription(models.Model):
         data['productPath'] = '/' + plan_code
         data['proration'] = True
         return fastspring_api.update_subscription(self.reference, data)
-
