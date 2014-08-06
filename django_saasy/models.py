@@ -63,7 +63,7 @@ class Subscription(models.Model):
 
     def get_order_page_url(self, product_path):
         data = self.get_order_page_url_params()
-        return get_order_page_url(product_path, data)
+        return get_order_page_url(product_path, data=data)
 
     @classmethod
     def get_or_create_from_user(cls, user):

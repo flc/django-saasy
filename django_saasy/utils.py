@@ -11,18 +11,23 @@ def encode_dict(data):
         ])
 
 
-def get_order_page_url(product_path, data=None):
+def get_order_page_url(product_path, session_reset=True, data=None):
     if not data:
         data = {}
 
     if app_settings.TEST_MODE:
-        data['mode'] = 'test'
+        data['mode'] = app_settings.TEST_MODE
+
+    if session_reset:
+        data['sessionOption'] = 'new'
+        data['member'] = 'new'
 
     url = 'https://sites.fastspring.com/%s/instant/%s' % (
         app_settings.COMPANY,
         product_path,
     )
-    return '%s?%s' % (
+    ret = '%s?%s' % (
         url,
         urllib.urlencode(encode_dict(data)),
     )
+    return ret

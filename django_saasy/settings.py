@@ -9,5 +9,8 @@ NOTIFICATION_PRIVATE_KEYS = getattr(settings, "SAASY_NOTIFICATION_PRIVATE_KEYS",
 # webhook. In the format "username:password"
 NOTIFICATION_HTTP_AUTHENTICATION = \
     getattr(settings, 'SAASY_NOTIFICATION_HTTP_AUTHENTICATION', None)
-TEST_MODE = getattr(settings, 'SAASY_TEST_MODE', True)
+# https://support.fastspring.com/entries/21734724-Store-Testing-Outside-of-SpringBoard
+# options: 'test'  or 'active.test'
+# use None or any falsy value to ignore test mode
+TEST_MODE = getattr(settings, 'SAASY_TEST_MODE', 'test')
 NOTIFICATION_LOG_ENABLED = getattr(settings, 'SAASY_NOTIFICATION_LOG_ENABLED', True)
