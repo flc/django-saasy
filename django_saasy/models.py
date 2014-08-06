@@ -103,7 +103,7 @@ class Subscription(models.Model):
 
     @property
     def is_canceled(self):
-        return self.end is not None
+        return self.end is not None and self.status_reason == "canceled"
 
     def cancel(self):
         return fastspring_api.cancel_subscription(self.reference)
