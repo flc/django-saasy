@@ -74,3 +74,50 @@ class Subscription(models.Model):
         if not self.reference:
             return
         return fastspring_api.get_subscription(self.reference)
+
+    @staticmethod
+    def _parse_date(date):
+        # XXX really FastSpring? come on!
+        if date:
+            if date.endswith("Z"):
+                date = date[:-1]
+        return date
+
+    def update_from_data(self, data):
+        if ((self.reference and data['reference'] != self.reference) or
+            data['referrer'] != self.referrer):
+            # this should not happen at all
+            raise ValueError("Subscription reference or referrer mismatch")
+
+        self.reference = data['reference']
+        self.customer_url = data['customerUrl']
+        self.status = data['status']
+        self.status_changed = data.get('statusChanged')
+        self.status_reason = data.get('statusReason', '')
+        self.next_period_date = self._parse_date(data.get('nextPeriodDate'))
+        self.end = self._parse_date(data.get('end'))
+        self.product_name = data['productName']
+        self.is_cancelable = data['cancelable'] == 'true'
+        self.is_test = data.get('test') == 'true'
+        self.save()
+
+    @property
+    def is_canceled(self):
+        return self.end is not None
+
+    def cancel(self):
+        return fastspring_api.cancel_subscription(self.reference)
+
+    def reactivate(self):
+        return fastspring_api.update_subscription(
+            self.reference,
+            {'no-end-date': None}
+            )
+    uncancel = reactivate
+
+    def change(self, plan_code):
+        data = {}
+        data['productPath'] = '/' + plan_code
+        data['proration'] = True
+        return fastspring_api.update_subscription(self.reference, data)
+

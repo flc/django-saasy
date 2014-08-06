@@ -25,17 +25,28 @@ def notification(request):
     try:
         # data = json.loads(request.body)
         data = request.POST
+        notification_type = data['notificationType']
+        logger.info('FastSpring notification: %s', notification_type)
+
         try:
-            _type = data['notificationType']
-            logger.info("FastSpring notification: %s", _type)
-            signal = getattr(signals, _type)
+            signal = getattr(signals, notification_type)
         except AttributeError:
-            return HttpResponseBadRequest("Unrecognized notification type.")
+            return HttpResponseBadRequest(
+                'Unrecognized notification type: %s', notification_type
+                )
 
         # subscription = fastspring_api.get_subscription(data['reference'])
-        subscription = fastspring_api.get_subscription(data['SubscriptionReference'])
-        subscription = subscription['subscription']
-        signal.send(sender=request, data=subscription)
+        if notification_type.startswith('subscription'):
+            subscription = fastspring_api.get_subscription(data['SubscriptionReference'])
+            data = subscription['subscription']
+            logger.info('subscription data: %s', data)
+        elif notification_type.startswith('order'):
+            order = fastspring_api.get_order(data['OrderID'])
+            data = order['order']
+            logger.info('order data: %s', data)
+
+        # send signal
+        signal.send(sender=request, data=data)
     except Exception as e:
         if settings.DEBUG:
             logger.exception(e)
@@ -77,18 +88,52 @@ if 'rest_framework' in settings.INSTALLED_APPS:
                 })
 
 
-    class CustomerUrlView(APIView):
+    class SubscriptionView(APIView):
 
         def get(self, request, format=None):
-            user = request.user
-            url = None
             try:
-                subscription = Subscription.objects.filter(user=request.user)[0]
-            except IndexError:
-                url = None
-            else:
-                url = subscription.customer_url
+                subscription = Subscription.objects.get(user=request.user)
+            except Subscription.DoesNotExist:
+                return Response({})
+
+            customer_url = subscription.customer_url
             return Response({
-                'url': url
+                'customer_url': customer_url,
+                'is_canceled': subscription.is_canceled,
                 })
 
+
+    class ReactivateSubscriptionView(APIView):
+        allowed_methods = ['post']
+
+        permission_classes = (permissions.IsAuthenticated, )
+
+        def post(self, request, format=None):
+            subscription = Subscription.objects.get(user=request.user)
+            if subscription.is_canceled:
+                subscription.reactivate()
+                return Response({
+                    'detail': 'subscription reactivated'
+                })
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+    class UpdateSubscriptionView(APIView):
+        allowed_methods = ['post']
+
+        permission_classes = (permissions.IsAuthenticated, )
+
+        def post(self, request, format=None):
+            try:
+                plan_code = request.DATA['plan_code']
+            except KeyError:
+                return Response(
+                    {'plan_code': 'Plan code is missing'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            subscription = Subscription.objects.get(user=request.user)
+            subscription.change(plan_code)
+            return Response({
+                'detail': 'subscription changed'
+                })
