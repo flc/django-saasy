@@ -61,6 +61,9 @@ if 'rest_framework' in settings.INSTALLED_APPS:
     from rest_framework.response import Response
     from rest_framework import authentication, permissions
     from rest_framework import status
+    from rest_framework.generics import RetrieveAPIView
+
+    from .serializers import SubscriptionSerializer
 
 
     class OrderPageDataView(APIView):
@@ -88,19 +91,17 @@ if 'rest_framework' in settings.INSTALLED_APPS:
                 })
 
 
-    class SubscriptionView(APIView):
+    class SubscriptionView(RetrieveAPIView):
+        permission_classes = (permissions.IsAuthenticated, )
+        serializer_class = SubscriptionSerializer
+        model = Subscription
 
-        def get(self, request, format=None):
+        def get_object(self):
+            request = self.request
             try:
-                subscription = Subscription.objects.get(user=request.user)
+                return Subscription.objects.get(user=request.user)
             except Subscription.DoesNotExist:
-                return Response({})
-
-            customer_url = subscription.customer_url
-            return Response({
-                'customer_url': customer_url,
-                'is_canceled': subscription.is_canceled,
-                })
+                return None
 
 
     class ReactivateSubscriptionView(APIView):

@@ -109,10 +109,15 @@ class Subscription(models.Model):
         return fastspring_api.cancel_subscription(self.reference)
 
     def reactivate(self):
-        return fastspring_api.update_subscription(
-            self.reference,
-            {'no-end-date': None}
-            )
+        if self.is_canceled:
+            data = fastspring_api.update_subscription(
+                self.reference,
+                {'no-end-date': None},
+                )
+            data = data['subscription']
+            logger.debug('subscription reactivated: %s', data)
+            self.update_from_data(data)
+            return data
     uncancel = reactivate
 
     def change(self, plan_code):
