@@ -84,6 +84,7 @@ if 'rest_framework' in settings.INSTALLED_APPS:
                     status=status.HTTP_400_BAD_REQUEST,
                     )
 
+            logger.info("Plan code: %s", plan_code)
             user = request.user
             subscription, created = Subscription.get_or_create_from_user(user)
             return Response({
