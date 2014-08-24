@@ -102,6 +102,12 @@ class Subscription(models.Model):
         self.is_test = data.get('test') == 'true'
         self.save()
 
+    def update_from_api(self):
+        data = self.fetch_from_api()
+        if data:
+            data = data['subscription']
+            return self.update_from_data(data)
+
     @property
     def is_canceled(self):
         return self.end is not None and self.status_reason == "canceled"
