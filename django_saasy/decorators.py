@@ -5,6 +5,7 @@ import json
 
 from django.http import HttpResponse, HttpResponseBadRequest, \
     HttpResponseForbidden
+from django.utils.crypto import constant_time_compare
 
 from . import settings as app_settings
 
