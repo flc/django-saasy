@@ -24,8 +24,9 @@ def notification(request):
     # test the webhooks with DEBUG=True
     try:
         # data = json.loads(request.body)
-        data = request.POST
-        notification_type = data['notificationType']
+        raw_data = request.POST
+        logger.debug("notification: %s", raw_data)
+        notification_type = raw_data['notificationType']
         logger.info('FastSpring notification: %s', notification_type)
 
         try:
@@ -35,18 +36,20 @@ def notification(request):
                 'Unrecognized notification type: %s', notification_type
                 )
 
-        # subscription = fastspring_api.get_subscription(data['reference'])
+        # subscription = fastspring_api.get_subscription(raw_data['reference'])
         if notification_type.startswith('subscription'):
-            subscription = fastspring_api.get_subscription(data['SubscriptionReference'])
+            subscription = fastspring_api.get_subscription(
+                raw_data['SubscriptionReference']
+                )
             data = subscription['subscription']
             logger.info('subscription data: %s', data)
         elif notification_type.startswith('order'):
-            order = fastspring_api.get_order(data['OrderID'])
+            order = fastspring_api.get_order(raw_data['OrderID'])
             data = order['order']
             logger.info('order data: %s', data)
 
         # send signal
-        signal.send(sender=request, data=data)
+        signal.send(sender=request, data=data, raw_data=raw_data)
     except Exception as e:
         if settings.DEBUG:
             logger.exception(e)
