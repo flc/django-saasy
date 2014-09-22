@@ -24,7 +24,7 @@ def notification(request):
     # test the webhooks with DEBUG=True
     try:
         # data = json.loads(request.body)
-        raw_data = request.POST
+        raw_data = request.POST.copy()
         logger.debug("notification: %s", raw_data)
         notification_type = raw_data['notificationType']
         logger.info('FastSpring notification: %s', notification_type)
